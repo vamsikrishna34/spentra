@@ -17,6 +17,8 @@ import {
   Target,
   Coins,
   RotateCcw,
+  PieChart,
+  BarChart3,
 } from "lucide-react";
 
 import Sidebar from "./components/Sidebar";
@@ -200,6 +202,29 @@ export default function App() {
   }, [transactions]);
 
   const maxCategorySpend = categoryBreakdown.length > 0 ? categoryBreakdown[0][1] : 1;
+
+  const monthlySpending = useMemo(() => {
+    const now = new Date();
+    const months = Array.from({ length: 6 }, (_, index) => {
+      const date = new Date(now.getFullYear(), now.getMonth() - (5 - index), 1);
+      return {
+        key: `${date.getFullYear()}-${date.getMonth()}`,
+        label: date.toLocaleDateString(undefined, { month: "short" }),
+        amount: 0,
+      };
+    });
+    const monthMap = new Map(months.map((month) => [month.key, month]));
+
+    for (const tx of transactions) {
+      const date = new Date(`${tx.date}T00:00:00`);
+      const month = monthMap.get(`${date.getFullYear()}-${date.getMonth()}`);
+      if (month) month.amount += tx.converted_amount || tx.amount;
+    }
+
+    return months;
+  }, [transactions]);
+
+  const maxMonthlySpend = Math.max(...monthlySpending.map((month) => month.amount), 1);
 
   return (
     <div className="flex min-h-screen bg-surface-0">
@@ -436,6 +461,12 @@ export default function App() {
                   daysUntilExhausted={livePrediction.days_until_budget_exhausted}
                   projectedTotal={livePrediction.projected_month_end_total}
                 />
+
+                {/* Spending Charts */}
+                <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+                  <CategoryPieChart data={categoryBreakdown} />
+                  <MonthlySpendingChart data={monthlySpending} maxAmount={maxMonthlySpend} />
+                </div>
 
                 {/* Category Breakdown */}
                 <div className="glass-card p-6">
@@ -685,6 +716,91 @@ function StatCard({ icon, label, value, color, trend }: StatCardProps) {
           <p className="text-xs text-slate-500 mt-0.5">{trend}</p>
         </div>
       </div>
+    </div>
+  );
+}
+
+const chartColors = ["#34d399", "#60a5fa", "#fbbf24", "#f87171", "#a78bfa", "#fb7185", "#22d3ee"];
+
+function CategoryPieChart({ data }: { data: [string, number][] }) {
+  const total = data.reduce((sum, [, amount]) => sum + amount, 0);
+  let cursor = 0;
+  const gradientStops = data.map(([, amount], index) => {
+    const start = cursor;
+    cursor += total > 0 ? (amount / total) * 100 : 0;
+    return `${chartColors[index % chartColors.length]} ${start}% ${cursor}%`;
+  });
+
+  return (
+    <div className="glass-card p-6">
+      <div className="flex items-center gap-2 mb-5">
+        <PieChart className="w-4 h-4 text-primary-400" />
+        <h2 className="font-semibold text-white">Spending Mix</h2>
+      </div>
+      {data.length === 0 ? (
+        <p className="text-sm text-slate-500">No spending data yet.</p>
+      ) : (
+        <div className="flex flex-col sm:flex-row items-center gap-6">
+          <div
+            className="w-40 h-40 rounded-full flex-shrink-0 relative"
+            style={{ background: `conic-gradient(${gradientStops.join(", ")})` }}
+            role="img"
+            aria-label="Spending by category pie chart"
+          >
+            <div className="absolute inset-7 rounded-full bg-surface-100 flex flex-col items-center justify-center">
+              <span className="text-[10px] uppercase tracking-wider text-slate-500">Total</span>
+              <span className="text-lg font-bold text-white">${total.toFixed(0)}</span>
+            </div>
+          </div>
+          <div className="w-full space-y-2.5">
+            {data.map(([category, amount], index) => (
+              <div key={category} className="flex items-center justify-between gap-3 text-sm">
+                <span className="flex items-center gap-2 text-slate-300 capitalize min-w-0">
+                  <span className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: chartColors[index % chartColors.length] }} />
+                  <span className="truncate">{category}</span>
+                </span>
+                <span className="text-slate-100 font-medium flex-shrink-0">{((amount / total) * 100).toFixed(0)}%</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function MonthlySpendingChart({
+  data,
+  maxAmount,
+}: {
+  data: { label: string; amount: number }[];
+  maxAmount: number;
+}) {
+  return (
+    <div className="glass-card p-6">
+      <div className="flex items-center gap-2 mb-5">
+        <BarChart3 className="w-4 h-4 text-primary-400" />
+        <h2 className="font-semibold text-white">Monthly Spending</h2>
+      </div>
+      <div className="h-48 flex items-end gap-2 sm:gap-4 border-b border-surface-300/50 px-1">
+        {data.map((month) => {
+          const height = month.amount > 0 ? Math.max((month.amount / maxAmount) * 100, 5) : 3;
+          return (
+            <div key={month.label} className="h-full flex-1 flex flex-col items-center justify-end gap-2 group">
+              <span className="text-[10px] text-slate-400 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
+                ${month.amount.toFixed(0)}
+              </span>
+              <div
+                className="w-full max-w-10 rounded-t-lg bg-gradient-to-t from-primary-700 to-primary-400 transition-all duration-500 group-hover:from-primary-500 group-hover:to-primary-300"
+                style={{ height: `${height}%` }}
+                title={`${month.label}: ${month.amount.toFixed(2)}`}
+              />
+              <span className="text-[11px] text-slate-500">{month.label}</span>
+            </div>
+          );
+        })}
+      </div>
+      <p className="text-xs text-slate-500 mt-4">Converted to USD across the last six months</p>
     </div>
   );
 }
