@@ -4,11 +4,14 @@ export interface Transaction {
   description: string;
   amount: number;
   currency: string;
+  converted_amount?: number;
   category: string;
   date: string;
   merchant: string | null;
-  source?: string;
+  source?: TransactionSource;
 }
+
+export type TransactionSource = "voice" | "text" | "manual" | "ocr" | "csv";
 
 export interface Budget {
   id: string;
@@ -18,8 +21,10 @@ export interface Budget {
   period: string;
   actual_amount?: number;
   remaining?: number;
-  health?: "green" | "yellow" | "red";
+  health?: HealthStatus;
 }
+
+export type HealthStatus = "green" | "yellow" | "red";
 
 export interface Goal {
   id: string;
@@ -45,8 +50,17 @@ export interface Prediction {
   recommendation: string;
 }
 
-export interface CoachingNudge {
-  nudge: string;
+export interface ChatMessage {
+  id: string;
+  role: "user" | "assistant";
+  content: string;
+  timestamp: number;
+}
+
+export interface CurrencyRate {
+  code: string;
+  rate: number;
+  symbol: string;
 }
 
 export interface SpendingSummary {
@@ -54,3 +68,16 @@ export interface SpendingSummary {
   transaction_count: number;
   by_category: Record<string, number>;
 }
+
+export interface ExportOptions {
+  format: "excel" | "pdf" | "word";
+  dateRange?: "month" | "quarter" | "year" | "all";
+}
+
+export type AppView =
+  | "dashboard"
+  | "transactions"
+  | "log"
+  | "analytics"
+  | "export"
+  | "settings";

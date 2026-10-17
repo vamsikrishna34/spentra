@@ -1,11 +1,26 @@
-import { LayoutDashboard, Wallet, Mic, BarChart3, Download, Settings, TrendingDown } from "lucide-react";
+import {
+  LayoutDashboard,
+  Wallet,
+  Mic,
+  BarChart3,
+  Download,
+  Settings,
+  TrendingDown,
+  X,
+} from "lucide-react";
+import type { AppView } from "../types";
 
 interface SidebarProps {
-  activeView: string;
-  onNavigate: (view: string) => void;
+  activeView: AppView;
+  onNavigate: (view: AppView) => void;
+  mobileOpen: boolean;
+  onCloseMobile: () => void;
+  totalBudget: number;
+  totalSpent: number;
+  budgetPct: number;
 }
 
-const navItems = [
+const navItems: { id: AppView; label: string; icon: typeof LayoutDashboard }[] = [
   { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
   { id: "transactions", label: "Transactions", icon: Wallet },
   { id: "log", label: "Quick Log", icon: Mic },
@@ -14,51 +29,100 @@ const navItems = [
   { id: "settings", label: "Settings", icon: Settings },
 ];
 
-export default function Sidebar({ activeView, onNavigate }: SidebarProps) {
+export default function Sidebar({
+  activeView,
+  onNavigate,
+  mobileOpen,
+  onCloseMobile,
+  totalBudget,
+  totalSpent,
+  budgetPct,
+}: SidebarProps) {
+  const handleNav = (view: AppView) => {
+    onNavigate(view);
+    onCloseMobile();
+  };
+
   return (
-    <aside className="w-64 bg-white border-r border-slate-200 flex flex-col h-screen sticky top-0">
-      <div className="p-6 border-b border-slate-200">
-        <div className="flex items-center gap-2">
-          <div className="w-9 h-9 rounded-lg bg-primary-600 flex items-center justify-center">
-            <TrendingDown className="w-5 h-5 text-white" />
-          </div>
-          <div>
-            <h1 className="text-lg font-bold text-slate-900">Spentra</h1>
-            <p className="text-xs text-slate-500">AI Finance Tracker</p>
-          </div>
-        </div>
-      </div>
+    <>
+      {/* Mobile overlay */}
+      {mobileOpen && (
+        <div
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 lg:hidden animate-fade-in"
+          onClick={onCloseMobile}
+        />
+      )}
 
-      <nav className="flex-1 p-4 space-y-1">
-        {navItems.map((item) => {
-          const Icon = item.icon;
-          const active = activeView === item.id;
-          return (
+      <aside
+        className={`fixed lg:sticky top-0 left-0 z-50 lg:z-auto w-72 h-screen
+          bg-surface-50/90 backdrop-blur-xl border-r border-surface-200/60
+          flex flex-col transition-transform duration-300
+          ${mobileOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"}`}
+      >
+        <div className="p-6 border-b border-surface-200/60">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2.5">
+              <div className="w-10 h-10 rounded-xl bg-primary-600 flex items-center justify-center neon-border">
+                <TrendingDown className="w-5 h-5 text-white" />
+              </div>
+              <div>
+                <h1 className="text-lg font-bold gradient-text">Spentra</h1>
+                <p className="text-xs text-slate-500">AI Finance Tracker</p>
+              </div>
+            </div>
             <button
-              key={item.id}
-              onClick={() => onNavigate(item.id)}
-              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 ${
-                active
-                  ? "bg-primary-50 text-primary-700"
-                  : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
-              }`}
+              onClick={onCloseMobile}
+              className="lg:hidden btn-ghost p-1.5"
+              aria-label="Close menu"
             >
-              <Icon className="w-5 h-5" />
-              {item.label}
+              <X className="w-5 h-5" />
             </button>
-          );
-        })}
-      </nav>
-
-      <div className="p-4 border-t border-slate-200">
-        <div className="bg-slate-50 rounded-lg p-3">
-          <p className="text-xs text-slate-500">Monthly Budget</p>
-          <p className="text-lg font-bold text-slate-900">$2,400</p>
-          <div className="mt-2 h-2 bg-slate-200 rounded-full overflow-hidden">
-            <div className="h-full bg-accent-500 rounded-full" style={{ width: "62%" }} />
           </div>
         </div>
-      </div>
-    </aside>
+
+        <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
+          {navItems.map((item) => {
+            const Icon = item.icon;
+            const active = activeView === item.id;
+            return (
+              <button
+                key={item.id}
+                onClick={() => handleNav(item.id)}
+                className={`w-full flex items-center gap-3 px-3.5 py-3 rounded-xl text-sm font-medium transition-all duration-200 ${
+                  active
+                    ? "bg-primary-600/15 text-primary-400 neon-border"
+                    : "text-slate-400 hover:bg-surface-200/50 hover:text-slate-200"
+                }`}
+              >
+                <Icon className="w-5 h-5 flex-shrink-0" />
+                {item.label}
+                {active && <div className="ml-auto w-1.5 h-1.5 rounded-full bg-primary-400 animate-pulse" />}
+              </button>
+            );
+          })}
+        </nav>
+
+        <div className="p-4 border-t border-surface-200/60">
+          <div className="bg-surface-200/40 rounded-xl p-4 border border-surface-300/30">
+            <div className="flex items-center justify-between mb-2">
+              <p className="text-xs text-slate-500 font-medium">Monthly Budget</p>
+              <span className="text-xs text-slate-400">{budgetPct}%</span>
+            </div>
+            <p className="text-xl font-bold text-white">
+              ${totalSpent.toFixed(0)}
+              <span className="text-sm text-slate-500 font-normal"> / ${totalBudget.toFixed(0)}</span>
+            </p>
+            <div className="mt-2.5 h-2 bg-surface-300/50 rounded-full overflow-hidden">
+              <div
+                className={`h-full rounded-full transition-all duration-700 ${
+                  budgetPct >= 100 ? "bg-danger-500" : budgetPct >= 80 ? "bg-warning-500" : "bg-primary-500"
+                }`}
+                style={{ width: `${Math.min(budgetPct, 100)}%` }}
+              />
+            </div>
+          </div>
+        </div>
+      </aside>
+    </>
   );
 }

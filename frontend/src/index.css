@@ -9,34 +9,107 @@
     box-sizing: border-box;
   }
 
+  html {
+    scroll-behavior: smooth;
+  }
+
   body {
     font-family: "Inter", system-ui, sans-serif;
-    @apply bg-slate-50 text-slate-900;
+    @apply bg-surface-0 text-slate-200;
     -webkit-font-smoothing: antialiased;
+    background-image:
+      radial-gradient(ellipse at top left, rgba(16, 185, 129, 0.06), transparent 50%),
+      radial-gradient(ellipse at bottom right, rgba(59, 130, 246, 0.04), transparent 50%);
+    background-attachment: fixed;
+  }
+
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  ::-webkit-scrollbar-track {
+    @apply bg-surface-50;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    @apply bg-surface-300 rounded-full;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-surface-400;
   }
 }
 
 @layer components {
+  .glass-card {
+    @apply bg-surface-100/70 backdrop-blur-xl border border-surface-200/60 rounded-2xl;
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.2);
+  }
+
+  .glass-card-hover {
+    @apply glass-card transition-all duration-300 hover:border-primary-500/40 hover:shadow-primary-500/10;
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.2);
+  }
+
+  .glass-card-hover:hover {
+    box-shadow: 0 8px 32px rgba(16, 185, 129, 0.12);
+  }
+
+  .neon-text {
+    text-shadow: 0 0 10px rgba(16, 185, 129, 0.5), 0 0 20px rgba(16, 185, 129, 0.3);
+  }
+
+  .neon-border {
+    box-shadow: 0 0 0 1px rgba(16, 185, 129, 0.3), 0 0 20px rgba(16, 185, 129, 0.15);
+  }
+
   .btn-primary {
-    @apply bg-primary-600 text-white rounded-lg px-4 py-2 font-medium hover:bg-primary-700 transition-colors duration-200;
+    @apply bg-primary-600 text-white rounded-xl px-4 py-2.5 font-medium
+           hover:bg-primary-500 active:bg-primary-700
+           transition-all duration-200 hover:shadow-lg hover:shadow-primary-600/30;
   }
 
   .btn-secondary {
-    @apply bg-white text-slate-700 border border-slate-300 rounded-lg px-4 py-2 font-medium hover:bg-slate-50 transition-colors duration-200;
+    @apply bg-surface-200/80 text-slate-300 border border-surface-300/60
+           rounded-xl px-4 py-2.5 font-medium
+           hover:bg-surface-300 hover:text-white
+           transition-all duration-200;
   }
 
-  .card {
-    @apply bg-white rounded-xl shadow-sm border border-slate-200 p-6;
+  .btn-danger {
+    @apply bg-danger-600/90 text-white rounded-xl px-4 py-2.5 font-medium
+           hover:bg-danger-500 transition-all duration-200;
+  }
+
+  .btn-ghost {
+    @apply text-slate-400 hover:text-white hover:bg-surface-200/50
+           rounded-lg px-3 py-2 transition-all duration-200;
   }
 
   .input-field {
-    @apply w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200;
+    @apply w-full bg-surface-200/50 border border-surface-300/50 rounded-xl
+           px-4 py-2.5 text-sm text-slate-100 placeholder-slate-500
+           focus:outline-none focus:ring-2 focus:ring-primary-500/50
+           focus:border-primary-500/50 transition-all duration-200;
+  }
+
+  .input-label {
+    @apply block text-xs font-medium text-slate-400 mb-1.5 uppercase tracking-wide;
+  }
+
+  .badge {
+    @apply inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium;
+  }
+
+  .divider {
+    @apply border-t border-surface-200/60;
   }
 }
 
 @keyframes pulse-ring {
   0% { transform: scale(0.95); opacity: 0.7; }
-  70% { transform: scale(1.3); opacity: 0; }
+  70% { transform: scale(1.4); opacity: 0; }
   100% { transform: scale(0.95); opacity: 0; }
 }
 
@@ -47,4 +120,17 @@
   border-radius: 50%;
   background: currentColor;
   animation: pulse-ring 1.5s infinite;
+}
+
+.gradient-text {
+  background: linear-gradient(135deg, #34d399, #10b981);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.shimmer-bg {
+  background: linear-gradient(90deg, transparent, rgba(16, 185, 129, 0.1), transparent);
+  background-size: 200% 100%;
+  animation: shimmer 2s linear infinite;
 }
