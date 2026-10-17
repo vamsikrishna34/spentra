@@ -41,7 +41,7 @@ import {
   getCurrencySymbol,
   CATEGORIES,
 } from "./services/mockData";
-import type { AppView, Transaction, Budget } from "./types";
+import type { AppView, Transaction, Budget, Goal } from "./types";
 
 export default function App() {
   const [activeView, setActiveView] = useState<AppView>("dashboard");
@@ -57,6 +57,16 @@ export default function App() {
   const [toast, setToast] = useState<string | null>(null);
   const [editingBudget, setEditingBudget] = useState<string | null>(null);
   const [budgetEditValue, setBudgetEditValue] = useState("");
+  const [selectedCurrency, setSelectedCurrency] = useState(() => localStorage.getItem("spentra_currency") || "USD");
+  const [goals, setGoals] = useState<Goal[]>(() => {
+    try {
+      return JSON.parse(localStorage.getItem("spentra_goals") || "[]") as Goal[];
+    } catch {
+      return [];
+    }
+  });
+  const [goalTitle, setGoalTitle] = useState("");
+  const [goalTarget, setGoalTarget] = useState("");
   const [theme, setTheme] = useState<"dark" | "light">(() => {
     return localStorage.getItem("spentra_theme") === "light" ? "light" : "dark";
   });
@@ -107,6 +117,14 @@ export default function App() {
     document.documentElement.classList.toggle("light", theme === "light");
     localStorage.setItem("spentra_theme", theme);
   }, [theme]);
+
+  useEffect(() => {
+    localStorage.setItem("spentra_currency", selectedCurrency);
+  }, [selectedCurrency]);
+
+  useEffect(() => {
+    localStorage.setItem("spentra_goals", JSON.stringify(goals));
+  }, [goals]);
 
   const showToast = (msg: string) => {
     setToast(msg);
@@ -201,6 +219,33 @@ export default function App() {
     showToast("Data reset to defaults");
   };
 
+  const handleAddGoal = () => {
+    const targetAmount = Number(goalTarget);
+    if (!goalTitle.trim() || !Number.isFinite(targetAmount) || targetAmount <= 0) return;
+    const goal: Goal = {
+      id: `goal-${Date.now()}`,
+      user_id: "demo-user",
+      title: goalTitle.trim(),
+      target_amount: targetAmount,
+      current_amount: 0,
+      target_date: "",
+    };
+    setGoals((current) => [...current, goal]);
+    setGoalTitle("");
+    setGoalTarget("");
+    showToast("Goal added");
+  };
+
+  const handleGoalProgress = (goalId: string, value: string) => {
+    const currentAmount = Math.max(0, Number(value) || 0);
+    setGoals((current) => current.map((goal) => goal.id === goalId ? { ...goal, current_amount: currentAmount } : goal));
+  };
+
+  const handleDeleteGoal = (goalId: string) => {
+    setGoals((current) => current.filter((goal) => goal.id !== goalId));
+    showToast("Goal removed");
+  };
+
   // Category breakdown for analytics
   const categoryBreakdown = useMemo(() => {
     const map: Record<string, number> = {};
@@ -262,7 +307,20 @@ export default function App() {
           <div className="w-10" />
         </div>
 
-        <div className="flex justify-end mb-4">
+        <div className="flex justify-end items-center gap-2 mb-4 flex-wrap">
+          <label className="btn-secondary flex items-center gap-2 text-sm cursor-pointer">
+            <span className="text-slate-500">Currency</span>
+            <select
+              value={selectedCurrency}
+              onChange={(event) => setSelectedCurrency(event.target.value)}
+              className="bg-transparent text-inherit outline-none cursor-pointer"
+              aria-label="Choose display currency"
+            >
+              {['USD', 'EUR', 'GBP', 'JPY', 'INR', 'CAD', 'AUD'].map((currency) => (
+                <option key={currency} value={currency} className="bg-surface-100 text-slate-900">{currency}</option>
+              ))}
+            </select>
+          </label>
           <button
             onClick={() => setTheme((current) => current === "dark" ? "light" : "dark")}
             className="btn-secondary flex items-center gap-2 text-sm"
@@ -353,17 +411,53 @@ export default function App() {
                   ) : (
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                       {enrichedBudgets.map((b) => (
-                        <HealthBarCard
-                          key={b.id}
-                          category={b.category}
-                          planned={b.planned_amount}
-                          actual={b.actual_amount || 0}
-                          health={b.health || "green"}
-                        />
+                        <div key={b.id} className="glass-card-hover p-4">
+                          <div className="flex items-center justify-between mb-2">
+                            <span className="text-sm font-semibold text-slate-100 capitalize">{b.category}</span>
+                            <button
+                              onClick={() => { setEditingBudget(b.id); setBudgetEditValue(String(b.planned_amount)); }}
+                              className="btn-ghost p-1 text-xs"
+                              aria-label={`Edit ${b.category} expected cost`}
+                            >
+                              <PencilLine className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                          {editingBudget === b.id ? (
+                            <div className="flex gap-2 mb-3">
+                              <input
+                                type="number"
+                                min="0"
+                                className="input-field py-1.5 text-sm"
+                                value={budgetEditValue}
+                                onChange={(event) => setBudgetEditValue(event.target.value)}
+                                onKeyDown={(event) => event.key === "Enter" && handleBudgetUpdate(b.id)}
+                                autoFocus
+                              />
+                              <button onClick={() => handleBudgetUpdate(b.id)} className="btn-primary px-3 py-1 text-xs">Save</button>
+                            </div>
+                          ) : null}
+                          <HealthBarCard
+                            category={b.category}
+                            planned={b.planned_amount}
+                            actual={b.actual_amount || 0}
+                            health={b.health || "green"}
+                          />
+                        </div>
                       ))}
                     </div>
                   )}
                 </div>
+
+                <GoalsPanel
+                  goals={goals}
+                  title={goalTitle}
+                  target={goalTarget}
+                  onTitleChange={setGoalTitle}
+                  onTargetChange={setGoalTarget}
+                  onAdd={handleAddGoal}
+                  onProgressChange={handleGoalProgress}
+                  onDelete={handleDeleteGoal}
+                />
 
                 {/* Recent Transactions */}
                 <div>
@@ -707,6 +801,98 @@ export default function App() {
 }
 
 // --- Sub-components ---
+
+function GoalsPanel({
+  goals,
+  title,
+  target,
+  onTitleChange,
+  onTargetChange,
+  onAdd,
+  onProgressChange,
+  onDelete,
+}: {
+  goals: Goal[];
+  title: string;
+  target: string;
+  onTitleChange: (value: string) => void;
+  onTargetChange: (value: string) => void;
+  onAdd: () => void;
+  onProgressChange: (goalId: string, value: string) => void;
+  onDelete: (goalId: string) => void;
+}) {
+  return (
+    <div className="glass-card p-6">
+      <div className="flex items-center justify-between gap-3 mb-4">
+        <div>
+          <h2 className="text-lg font-semibold text-white">Financial Goals</h2>
+          <p className="text-sm text-slate-500 mt-1">Track savings targets alongside your spending.</p>
+        </div>
+        <Target className="w-5 h-5 text-primary-400" />
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-[1fr_140px_auto] gap-2 mb-5">
+        <input
+          className="input-field"
+          value={title}
+          onChange={(event) => onTitleChange(event.target.value)}
+          placeholder="Goal name, e.g. Emergency fund"
+          aria-label="Goal name"
+        />
+        <input
+          className="input-field"
+          type="number"
+          min="1"
+          value={target}
+          onChange={(event) => onTargetChange(event.target.value)}
+          placeholder="Target amount"
+          aria-label="Goal target amount"
+        />
+        <button onClick={onAdd} className="btn-primary flex items-center justify-center gap-2">
+          <Plus className="w-4 h-4" /> Add goal
+        </button>
+      </div>
+
+      {goals.length === 0 ? (
+        <p className="text-sm text-slate-500 text-center py-4">No goals yet. Add your first savings target above.</p>
+      ) : (
+        <div className="space-y-4">
+          {goals.map((goal) => {
+            const progress = Math.min((goal.current_amount / goal.target_amount) * 100, 100);
+            return (
+              <div key={goal.id} className="rounded-xl bg-surface-200/40 border border-surface-300/30 p-4">
+                <div className="flex items-center justify-between gap-3 mb-2">
+                  <p className="font-medium text-slate-100 truncate">{goal.title}</p>
+                  <button onClick={() => onDelete(goal.id)} className="btn-ghost p-1 text-slate-500 hover:text-danger-400" aria-label={`Remove ${goal.title}`}>
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </div>
+                <div className="flex items-center justify-between text-xs text-slate-500 mb-2">
+                  <span>{progress.toFixed(0)}% complete</span>
+                  <span>${goal.current_amount.toFixed(0)} / ${goal.target_amount.toFixed(0)}</span>
+                </div>
+                <div className="h-2 bg-surface-300/60 rounded-full overflow-hidden mb-3">
+                  <div className="h-full bg-primary-500 rounded-full transition-all" style={{ width: `${progress}%` }} />
+                </div>
+                <label className="text-xs text-slate-500 flex items-center gap-2">
+                  Current saved
+                  <input
+                    type="number"
+                    min="0"
+                    value={goal.current_amount}
+                    onChange={(event) => onProgressChange(goal.id, event.target.value)}
+                    className="input-field py-1.5 text-sm max-w-32"
+                    aria-label={`Current saved for ${goal.title}`}
+                  />
+                </label>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
 
 interface StatCardProps {
   icon: React.ReactNode;
