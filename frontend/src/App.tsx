@@ -42,6 +42,8 @@ import {
   computePrediction,
   getCurrencySymbol,
   formatCurrency,
+  convertFromUSD,
+  convertToUSD,
   CATEGORIES,
 } from "./services/mockData";
 import type { AppView, Transaction, Budget, Goal } from "./types";
@@ -211,8 +213,9 @@ export default function App() {
   };
 
   const handleBudgetUpdate = async (budgetId: string) => {
-    const val = parseFloat(budgetEditValue);
-    if (isNaN(val) || val <= 0) return;
+    const displayVal = parseFloat(budgetEditValue);
+    if (isNaN(displayVal) || displayVal <= 0) return;
+    const val = convertToUSD(displayVal, selectedCurrency);
     try {
       await dataStore.updateBudget(budgetId, val);
       setBudgets((prev) => prev.map((b) => (b.id === budgetId ? { ...b, planned_amount: val } : b)));
@@ -221,6 +224,11 @@ export default function App() {
     } catch {
       showToast("Failed to update budget");
     }
+  };
+
+  const openBudgetEdit = (budgetId: string, plannedUSD: number) => {
+    setEditingBudget(budgetId);
+    setBudgetEditValue(String(convertFromUSD(plannedUSD, selectedCurrency).toFixed(0)));
   };
 
   const handleResetData = () => {
@@ -528,7 +536,7 @@ export default function App() {
                           <div className="flex items-center justify-between mb-2">
                             <span className="text-sm font-semibold text-slate-100 capitalize">{b.category}</span>
                             <button
-                              onClick={() => { setEditingBudget(b.id); setBudgetEditValue(String(b.planned_amount)); }}
+                              onClick={() => openBudgetEdit(b.id, b.planned_amount)}
                               className="btn-ghost p-1 text-xs"
                               aria-label={`Edit ${b.category} expected cost`}
                             >
@@ -536,7 +544,8 @@ export default function App() {
                             </button>
                           </div>
                           {editingBudget === b.id ? (
-                            <div className="flex gap-2 mb-3">
+                            <div className="flex gap-2 mb-3 items-center">
+                              <span className="text-slate-500 text-sm">{getCurrencySymbol(selectedCurrency)}</span>
                               <input
                                 type="number"
                                 min="0"
@@ -547,6 +556,7 @@ export default function App() {
                                 autoFocus
                               />
                               <button onClick={() => handleBudgetUpdate(b.id)} className="btn-primary px-3 py-1 text-xs">Save</button>
+                              <button onClick={() => setEditingBudget(null)} className="btn-secondary px-3 py-1 text-xs">Cancel</button>
                             </div>
                           ) : null}
                           <HealthBarCard
@@ -736,6 +746,7 @@ export default function App() {
                           <h3 className="font-semibold text-slate-100 capitalize">{b.category}</h3>
                           {editingBudget === b.id ? (
                             <div className="flex items-center gap-1.5">
+                              <span className="text-slate-500 text-xs">{getCurrencySymbol(selectedCurrency)}</span>
                               <input
                                 type="number"
                                 className="input-field w-20 text-sm py-1"
@@ -750,10 +761,16 @@ export default function App() {
                               >
                                 Save
                               </button>
+                              <button
+                                onClick={() => setEditingBudget(null)}
+                                className="btn-secondary px-2 py-1 text-xs"
+                              >
+                                Cancel
+                              </button>
                             </div>
                           ) : (
                             <button
-                              onClick={() => { setEditingBudget(b.id); setBudgetEditValue(String(b.planned_amount)); }}
+                              onClick={() => openBudgetEdit(b.id, b.planned_amount)}
                               className="btn-ghost p-1 text-xs"
                             >
                               <PencilLine className="w-3.5 h-3.5" />
