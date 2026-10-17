@@ -21,6 +21,8 @@ import {
   BarChart3,
   Sun,
   Moon,
+  Banknote,
+  PiggyBank,
 } from "lucide-react";
 
 import Sidebar from "./components/Sidebar";
@@ -68,6 +70,8 @@ export default function App() {
   });
   const [goalTitle, setGoalTitle] = useState("");
   const [goalTarget, setGoalTarget] = useState("");
+  const [salary, setSalary] = useState(() => Number(localStorage.getItem("spentra_salary")) || 0);
+  const [salaryInput, setSalaryInput] = useState("");
   const [theme, setTheme] = useState<"dark" | "light">(() => {
     return localStorage.getItem("spentra_theme") === "light" ? "light" : "dark";
   });
@@ -126,6 +130,10 @@ export default function App() {
   useEffect(() => {
     localStorage.setItem("spentra_goals", JSON.stringify(goals));
   }, [goals]);
+
+  useEffect(() => {
+    localStorage.setItem("spentra_salary", String(salary));
+  }, [salary]);
 
   const showToast = (msg: string) => {
     setToast(msg);
@@ -246,6 +254,17 @@ export default function App() {
     setGoals((current) => current.filter((goal) => goal.id !== goalId));
     showToast("Goal removed");
   };
+
+  const handleSaveSalary = () => {
+    const value = Number(salaryInput);
+    if (!Number.isFinite(value) || value < 0) return;
+    setSalary(value);
+    setSalaryInput("");
+    showToast(value > 0 ? "Salary updated" : "Salary cleared");
+  };
+
+  const savings = salary - totalSpent;
+  const savingsPct = salary > 0 ? Math.min((savings / salary) * 100, 100) : 0;
 
   // Category breakdown for analytics
   const categoryBreakdown = useMemo(() => {
@@ -384,6 +403,63 @@ export default function App() {
                     color={livePrediction.velocity_warning ? "warning" : "accent"}
                     trend={livePrediction.velocity_warning ? "Over pace" : "On track"}
                   />
+                </div>
+
+                {/* Salary Summary */}
+                <div className="glass-card p-5 sm:p-6">
+                  <div className="flex items-center justify-between gap-4 flex-wrap">
+                    <div className="flex items-center gap-3">
+                      <div className="w-11 h-11 rounded-xl bg-primary-500/15 text-primary-400 flex items-center justify-center">
+                        <Banknote className="w-5 h-5" />
+                      </div>
+                      <div>
+                        <p className="text-xs text-slate-500 font-medium uppercase tracking-wide">Monthly Salary</p>
+                        <p className="text-xl font-bold text-white">
+                          {salary > 0 ? formatCurrency(salary, selectedCurrency) : "Not set"}
+                        </p>
+                      </div>
+                    </div>
+                    {salary > 0 && (
+                      <div className="flex items-center gap-3">
+                        <div className="text-right">
+                          <p className="text-xs text-slate-500 font-medium uppercase tracking-wide">Savings</p>
+                          <p className={`text-xl font-bold ${savings >= 0 ? "text-primary-400" : "text-danger-400"}`}>
+                            {formatCurrency(savings, selectedCurrency)}
+                          </p>
+                        </div>
+                        <div className="w-11 h-11 rounded-xl bg-accent-500/15 text-accent-400 flex items-center justify-center">
+                          <PiggyBank className="w-5 h-5" />
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                  {salary > 0 && (
+                    <div className="mt-4">
+                      <div className="flex items-center justify-between text-xs text-slate-500 mb-1.5">
+                        <span>{savingsPct.toFixed(0)} saved of salary</span>
+                        <span>{formatCurrency(totalSpent, selectedCurrency)} spent</span>
+                      </div>
+                      <div className="h-2.5 bg-surface-300/50 rounded-full overflow-hidden">
+                        <div
+                          className={`h-full rounded-full transition-all duration-700 ${savings >= 0 ? "bg-primary-500" : "bg-danger-500"}`}
+                          style={{ width: `${Math.max(0, savingsPct)}%` }}
+                        />
+                      </div>
+                      <p className="text-xs text-slate-500 mt-2">
+                        {savings >= 0
+                          ? `You've saved ${savingsPct.toFixed(0)}% of your salary this month.`
+                          : `You're ${formatCurrency(Math.abs(savings), selectedCurrency)} over your salary this month.`}
+                      </p>
+                    </div>
+                  )}
+                  {salary === 0 && (
+                    <button
+                      onClick={() => setActiveView("settings")}
+                      className="btn-primary mt-4 flex items-center gap-2 text-sm"
+                    >
+                      <Plus className="w-4 h-4" /> Add your salary
+                    </button>
+                  )}
                 </div>
 
                 {/* Predictive Banner */}
@@ -743,6 +819,45 @@ export default function App() {
                         </button>
                       ))}
                     </div>
+                  </div>
+                </div>
+
+                <div className="glass-card p-6 space-y-4">
+                  <div>
+                    <h3 className="font-semibold text-white mb-1">Monthly Salary</h3>
+                    <p className="text-sm text-slate-500">Set your monthly income to track savings</p>
+                    <div className="mt-3 flex gap-2 flex-wrap items-center">
+                      <div className="flex items-center gap-2 flex-1 min-w-48">
+                        <span className="text-slate-500 text-sm">{getCurrencySymbol(selectedCurrency)}</span>
+                        <input
+                          type="number"
+                          min="0"
+                          className="input-field"
+                          value={salaryInput}
+                          onChange={(event) => setSalaryInput(event.target.value)}
+                          onKeyDown={(event) => event.key === "Enter" && handleSaveSalary()}
+                          placeholder={salary > 0 ? String(salary) : "Enter monthly salary"}
+                          aria-label="Monthly salary amount"
+                        />
+                      </div>
+                      <button onClick={handleSaveSalary} className="btn-primary flex items-center gap-2 text-sm">
+                        <PencilLine className="w-4 h-4" /> Save salary
+                      </button>
+                      {salary > 0 && (
+                        <button
+                          onClick={() => { setSalary(0); setSalaryInput(""); showToast("Salary cleared"); }}
+                          className="btn-secondary flex items-center gap-2 text-sm"
+                        >
+                          <Trash2 className="w-4 h-4" /> Clear
+                        </button>
+                      )}
+                    </div>
+                    {salary > 0 && (
+                      <p className="text-xs text-slate-500 mt-2">
+                        Current: {formatCurrency(salary, selectedCurrency)} per month —
+                        savings so far: {formatCurrency(savings, selectedCurrency)}
+                      </p>
+                    )}
                   </div>
                 </div>
 
