@@ -72,6 +72,7 @@ export default function App() {
   const [goalTarget, setGoalTarget] = useState("");
   const [salary, setSalary] = useState(() => Number(localStorage.getItem("spentra_salary")) || 0);
   const [salaryInput, setSalaryInput] = useState("");
+  const [editingSalary, setEditingSalary] = useState(false);
   const [theme, setTheme] = useState<"dark" | "light">(() => {
     return localStorage.getItem("spentra_theme") === "light" ? "light" : "dark";
   });
@@ -260,7 +261,13 @@ export default function App() {
     if (!Number.isFinite(value) || value < 0) return;
     setSalary(value);
     setSalaryInput("");
+    setEditingSalary(false);
     showToast(value > 0 ? "Salary updated" : "Salary cleared");
+  };
+
+  const startEditSalary = () => {
+    setSalaryInput(salary > 0 ? String(salary) : "");
+    setEditingSalary(true);
   };
 
   const savings = salary - totalSpent;
@@ -414,12 +421,39 @@ export default function App() {
                       </div>
                       <div>
                         <p className="text-xs text-slate-500 font-medium uppercase tracking-wide">Monthly Salary</p>
-                        <p className="text-xl font-bold text-white">
-                          {salary > 0 ? formatCurrency(salary, selectedCurrency) : "Not set"}
-                        </p>
+                        {editingSalary ? (
+                          <div className="flex items-center gap-2 mt-1">
+                            <span className="text-slate-500 text-sm">{getCurrencySymbol(selectedCurrency)}</span>
+                            <input
+                              type="number"
+                              min="0"
+                              className="input-field py-1.5 text-sm w-36"
+                              value={salaryInput}
+                              onChange={(event) => setSalaryInput(event.target.value)}
+                              onKeyDown={(event) => event.key === "Enter" && handleSaveSalary()}
+                              autoFocus
+                              aria-label="Edit monthly salary"
+                            />
+                            <button onClick={handleSaveSalary} className="btn-primary px-3 py-1.5 text-xs">Save</button>
+                            <button onClick={() => setEditingSalary(false)} className="btn-secondary px-3 py-1.5 text-xs">Cancel</button>
+                          </div>
+                        ) : (
+                          <div className="flex items-center gap-2">
+                            <p className="text-xl font-bold text-white">
+                              {salary > 0 ? formatCurrency(salary, selectedCurrency) : "Not set"}
+                            </p>
+                            <button
+                              onClick={startEditSalary}
+                              className="btn-ghost p-1 text-xs"
+                              aria-label="Edit salary"
+                            >
+                              <PencilLine className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        )}
                       </div>
                     </div>
-                    {salary > 0 && (
+                    {salary > 0 && !editingSalary && (
                       <div className="flex items-center gap-3">
                         <div className="text-right">
                           <p className="text-xs text-slate-500 font-medium uppercase tracking-wide">Savings</p>
@@ -433,7 +467,7 @@ export default function App() {
                       </div>
                     )}
                   </div>
-                  {salary > 0 && (
+                  {salary > 0 && !editingSalary && (
                     <div className="mt-4">
                       <div className="flex items-center justify-between text-xs text-slate-500 mb-1.5">
                         <span>{savingsPct.toFixed(0)} saved of salary</span>
@@ -452,9 +486,9 @@ export default function App() {
                       </p>
                     </div>
                   )}
-                  {salary === 0 && (
+                  {salary === 0 && !editingSalary && (
                     <button
-                      onClick={() => setActiveView("settings")}
+                      onClick={startEditSalary}
                       className="btn-primary mt-4 flex items-center gap-2 text-sm"
                     >
                       <Plus className="w-4 h-4" /> Add your salary
