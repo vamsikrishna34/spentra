@@ -19,6 +19,8 @@ import {
   RotateCcw,
   PieChart,
   BarChart3,
+  Sun,
+  Moon,
 } from "lucide-react";
 
 import Sidebar from "./components/Sidebar";
@@ -55,6 +57,9 @@ export default function App() {
   const [toast, setToast] = useState<string | null>(null);
   const [editingBudget, setEditingBudget] = useState<string | null>(null);
   const [budgetEditValue, setBudgetEditValue] = useState("");
+  const [theme, setTheme] = useState<"dark" | "light">(() => {
+    return localStorage.getItem("spentra_theme") === "light" ? "light" : "dark";
+  });
 
   // Derived: enriched budgets with real-time actual amounts
   const enrichedBudgets = useMemo(
@@ -97,6 +102,11 @@ export default function App() {
   useEffect(() => {
     loadData();
   }, [loadData]);
+
+  useEffect(() => {
+    document.documentElement.classList.toggle("light", theme === "light");
+    localStorage.setItem("spentra_theme", theme);
+  }, [theme]);
 
   const showToast = (msg: string) => {
     setToast(msg);
@@ -250,6 +260,17 @@ export default function App() {
           </button>
           <h1 className="text-lg font-bold gradient-text">Spentra</h1>
           <div className="w-10" />
+        </div>
+
+        <div className="flex justify-end mb-4">
+          <button
+            onClick={() => setTheme((current) => current === "dark" ? "light" : "dark")}
+            className="btn-secondary flex items-center gap-2 text-sm"
+            aria-label={`Switch to ${theme === "dark" ? "light" : "dark"} mode`}
+          >
+            {theme === "dark" ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+            <span>{theme === "dark" ? "Light mode" : "Dark mode"}</span>
+          </button>
         </div>
 
         {/* Toast */}
