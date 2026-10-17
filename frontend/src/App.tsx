@@ -2,7 +2,6 @@ import { useState, useEffect, useCallback, useMemo } from "react";
 import {
   Wallet,
   Plus,
-  TrendingUp,
   TrendingDown,
   Loader2,
   Trash2,
@@ -16,7 +15,6 @@ import {
   Sparkles,
   ArrowRight,
   Target,
-  DollarSign,
   Coins,
   RotateCcw,
 } from "lucide-react";
@@ -36,18 +34,16 @@ import { dataStore } from "./services/dataStore";
 import {
   enrichBudgets,
   computePrediction,
-  computeHealth,
   getCurrencySymbol,
   CATEGORIES,
 } from "./services/mockData";
-import type { AppView, Transaction, Budget, Prediction, HealthStatus } from "./types";
+import type { AppView, Transaction, Budget } from "./types";
 
 export default function App() {
   const [activeView, setActiveView] = useState<AppView>("dashboard");
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [budgets, setBudgets] = useState<Budget[]>([]);
-  const [prediction, setPrediction] = useState<Prediction | null>(null);
   const [loading, setLoading] = useState(true);
   const [logLoading, setLogLoading] = useState(false);
   const [showExport, setShowExport] = useState(false);
@@ -716,7 +712,6 @@ function TransactionList({
         {transactions.map((tx) => {
           const symbol = getCurrencySymbol(tx.currency);
           const usdAmount = tx.converted_amount || tx.amount;
-          const health = computeHealth(100, usdAmount > 50 ? 100 : 50);
           return (
             <div
               key={tx.id}
