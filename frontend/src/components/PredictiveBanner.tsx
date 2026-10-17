@@ -1,4 +1,5 @@
 import { TrendingUp, AlertCircle, Lightbulb, Gauge } from "lucide-react";
+import { formatCurrency } from "../services/mockData";
 
 interface PredictiveBannerProps {
   safeDailySpend: number;
@@ -6,6 +7,7 @@ interface PredictiveBannerProps {
   recommendation: string;
   daysUntilExhausted: number | null;
   projectedTotal?: number;
+  currency?: string;
 }
 
 export default function PredictiveBanner({
@@ -14,6 +16,7 @@ export default function PredictiveBanner({
   recommendation,
   daysUntilExhausted,
   projectedTotal,
+  currency = "USD",
 }: PredictiveBannerProps) {
   const isWarning = velocityWarning || (daysUntilExhausted !== null && daysUntilExhausted <= 7);
 
@@ -42,11 +45,11 @@ export default function PredictiveBanner({
             <span
               className={`text-2xl font-bold ${isWarning ? "text-warning-400" : "text-primary-400 neon-text"}`}
             >
-              ${safeDailySpend.toFixed(2)}
+              {formatCurrency(safeDailySpend, currency)}
             </span>
             {projectedTotal !== undefined && (
               <span className="text-xs text-slate-500 ml-auto">
-                Projected: ${projectedTotal.toFixed(0)}
+                Projected: {formatCurrency(projectedTotal, currency)}
               </span>
             )}
           </div>

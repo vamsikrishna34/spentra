@@ -8,6 +8,7 @@ import {
   TrendingDown,
   X,
 } from "lucide-react";
+import { convertFromUSD, getCurrencySymbol } from "../services/mockData";
 import type { AppView } from "../types";
 
 interface SidebarProps {
@@ -18,6 +19,7 @@ interface SidebarProps {
   totalBudget: number;
   totalSpent: number;
   budgetPct: number;
+  currency?: string;
 }
 
 const navItems: { id: AppView; label: string; icon: typeof LayoutDashboard }[] = [
@@ -37,6 +39,7 @@ export default function Sidebar({
   totalBudget,
   totalSpent,
   budgetPct,
+  currency = "USD",
 }: SidebarProps) {
   const handleNav = (view: AppView) => {
     onNavigate(view);
@@ -109,8 +112,8 @@ export default function Sidebar({
               <span className="text-xs text-slate-400">{budgetPct}%</span>
             </div>
             <p className="text-xl font-bold text-white">
-              ${totalSpent.toFixed(0)}
-              <span className="text-sm text-slate-500 font-normal"> / ${totalBudget.toFixed(0)}</span>
+              {getCurrencySymbol(currency)}{convertFromUSD(totalSpent, currency).toFixed(0)}
+              <span className="text-sm text-slate-500 font-normal"> / {getCurrencySymbol(currency)}{convertFromUSD(totalBudget, currency).toFixed(0)}</span>
             </p>
             <div className="mt-2.5 h-2 bg-surface-300/50 rounded-full overflow-hidden">
               <div

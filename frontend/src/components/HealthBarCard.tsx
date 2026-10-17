@@ -1,4 +1,5 @@
 import { CheckCircle2, AlertTriangle, XCircle } from "lucide-react";
+import { convertFromUSD, getCurrencySymbol } from "../services/mockData";
 import type { HealthStatus } from "../types";
 
 interface HealthBarCardProps {
@@ -6,7 +7,7 @@ interface HealthBarCardProps {
   planned: number;
   actual: number;
   health: HealthStatus;
-  currencySymbol?: string;
+  currency?: string;
 }
 
 const healthConfig: Record<HealthStatus, {
@@ -48,12 +49,16 @@ export default function HealthBarCard({
   planned,
   actual,
   health,
-  currencySymbol = "$",
+  currency = "USD",
 }: HealthBarCardProps) {
   const config = healthConfig[health];
   const Icon = config.icon;
   const percentage = planned > 0 ? Math.min((actual / planned) * 100, 100) : 0;
   const remaining = planned - actual;
+  const symbol = getCurrencySymbol(currency);
+  const actualDisplay = convertFromUSD(actual, currency);
+  const plannedDisplay = convertFromUSD(planned, currency);
+  const remainingDisplay = convertFromUSD(Math.abs(remaining), currency);
 
   return (
     <div className={`glass-card-hover p-5 shadow-lg ${config.glow}`}>
@@ -66,8 +71,8 @@ export default function HealthBarCard({
       </div>
 
       <div className="flex items-baseline gap-2 mb-3">
-        <span className="text-2xl font-bold text-white">{currencySymbol}{actual.toFixed(0)}</span>
-        <span className="text-sm text-slate-500">/ {currencySymbol}{planned.toFixed(0)}</span>
+        <span className="text-2xl font-bold text-white">{symbol}{actualDisplay.toFixed(0)}</span>
+        <span className="text-sm text-slate-500">/ {symbol}{plannedDisplay.toFixed(0)}</span>
       </div>
 
       <div className="h-2.5 bg-surface-300/50 rounded-full overflow-hidden mb-3 relative">
@@ -81,8 +86,8 @@ export default function HealthBarCard({
 
       <p className={`text-sm ${remaining < 0 ? "text-danger-400" : "text-slate-400"}`}>
         {remaining < 0
-          ? `${currencySymbol}${Math.abs(remaining).toFixed(0)} over budget`
-          : `${currencySymbol}${remaining.toFixed(0)} remaining`}
+          ? `${symbol}${remainingDisplay.toFixed(0)} over budget`
+          : `${symbol}${convertFromUSD(remaining, currency).toFixed(0)} remaining`}
       </p>
     </div>
   );

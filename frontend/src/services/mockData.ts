@@ -33,6 +33,21 @@ export function getCurrencySymbol(code: string): string {
   return CURRENCY_SYMBOLS[code] || "$";
 }
 
+export function convertFromUSD(amountUSD: number, toCurrency: string): number {
+  if (toCurrency === "USD") return amountUSD;
+  const rate = MOCK_RATES.find((r) => r.code === toCurrency);
+  if (!rate) return amountUSD;
+  return amountUSD * rate.rate;
+}
+
+export function formatCurrency(amountUSD: number, currency: string): string {
+  const symbol = getCurrencySymbol(currency);
+  const value = convertFromUSD(amountUSD, currency);
+  const isJpy = currency === "JPY";
+  const formatted = isJpy ? Math.round(value).toLocaleString() : value.toFixed(2);
+  return `${symbol}${formatted}`;
+}
+
 export const CATEGORIES = [
   "food",
   "transport",

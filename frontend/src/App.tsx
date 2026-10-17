@@ -39,6 +39,7 @@ import {
   enrichBudgets,
   computePrediction,
   getCurrencySymbol,
+  formatCurrency,
   CATEGORIES,
 } from "./services/mockData";
 import type { AppView, Transaction, Budget, Goal } from "./types";
@@ -291,6 +292,7 @@ export default function App() {
         totalBudget={totalBudget}
         totalSpent={totalSpent}
         budgetPct={budgetPct}
+        currency={selectedCurrency}
       />
 
       <main className="flex-1 min-w-0 p-4 sm:p-6 lg:p-8 max-w-7xl">
@@ -357,28 +359,28 @@ export default function App() {
                   <StatCard
                     icon={<Wallet className="w-5 h-5" />}
                     label="Total Spent"
-                    value={`$${totalSpent.toFixed(2)}`}
+                    value={formatCurrency(totalSpent, selectedCurrency)}
                     color="primary"
                     trend={`${transactions.length} transactions`}
                   />
                   <StatCard
                     icon={<Target className="w-5 h-5" />}
                     label="Total Budget"
-                    value={`$${totalBudget.toFixed(2)}`}
+                    value={formatCurrency(totalBudget, selectedCurrency)}
                     color="blue"
                     trend="monthly"
                   />
                   <StatCard
                     icon={<TrendingDown className="w-5 h-5" />}
                     label="Remaining"
-                    value={`$${Math.max(0, totalBudget - totalSpent).toFixed(2)}`}
+                    value={formatCurrency(Math.max(0, totalBudget - totalSpent), selectedCurrency)}
                     color={totalBudget - totalSpent < 0 ? "danger" : "accent"}
                     trend={`${budgetPct.toFixed(0)}% used`}
                   />
                   <StatCard
                     icon={<Coins className="w-5 h-5" />}
                     label="Safe Daily Spend"
-                    value={`$${livePrediction.safe_daily_spend.toFixed(2)}`}
+                    value={formatCurrency(livePrediction.safe_daily_spend, selectedCurrency)}
                     color={livePrediction.velocity_warning ? "warning" : "accent"}
                     trend={livePrediction.velocity_warning ? "Over pace" : "On track"}
                   />
@@ -391,6 +393,7 @@ export default function App() {
                   recommendation={livePrediction.recommendation}
                   daysUntilExhausted={livePrediction.days_until_budget_exhausted}
                   projectedTotal={livePrediction.projected_month_end_total}
+                  currency={selectedCurrency}
                 />
 
                 {/* Budget Health Bars */}
@@ -441,6 +444,7 @@ export default function App() {
                             planned={b.planned_amount}
                             actual={b.actual_amount || 0}
                             health={b.health || "green"}
+                            currency={selectedCurrency}
                           />
                         </div>
                       ))}
@@ -457,6 +461,7 @@ export default function App() {
                   onAdd={handleAddGoal}
                   onProgressChange={handleGoalProgress}
                   onDelete={handleDeleteGoal}
+                  currency={selectedCurrency}
                 />
 
                 {/* Recent Transactions */}
@@ -473,6 +478,7 @@ export default function App() {
                   <TransactionList
                     transactions={transactions.slice(0, 8)}
                     onDelete={handleDelete}
+                    displayCurrency={selectedCurrency}
                   />
                 </div>
               </div>
@@ -557,6 +563,7 @@ export default function App() {
                   transactions={transactions}
                   onDelete={handleDelete}
                   showCurrency
+                  displayCurrency={selectedCurrency}
                 />
               </div>
             )}
@@ -575,12 +582,13 @@ export default function App() {
                   recommendation={livePrediction.recommendation}
                   daysUntilExhausted={livePrediction.days_until_budget_exhausted}
                   projectedTotal={livePrediction.projected_month_end_total}
+                  currency={selectedCurrency}
                 />
 
                 {/* Spending Charts */}
                 <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-                  <CategoryPieChart data={categoryBreakdown} />
-                  <MonthlySpendingChart data={monthlySpending} maxAmount={maxMonthlySpend} />
+                  <CategoryPieChart data={categoryBreakdown} currency={selectedCurrency} />
+                  <MonthlySpendingChart data={monthlySpending} maxAmount={maxMonthlySpend} currency={selectedCurrency} />
                 </div>
 
                 {/* Category Breakdown */}
@@ -594,7 +602,7 @@ export default function App() {
                         <div key={cat}>
                           <div className="flex items-center justify-between mb-1.5">
                             <span className="text-sm text-slate-300 capitalize">{cat}</span>
-                            <span className="text-sm font-medium text-white">${amount.toFixed(2)}</span>
+                            <span className="text-sm font-medium text-white">{formatCurrency(amount, selectedCurrency)}</span>
                           </div>
                           <div className="h-2 bg-surface-300/50 rounded-full overflow-hidden">
                             <div
@@ -647,6 +655,7 @@ export default function App() {
                           planned={b.planned_amount}
                           actual={b.actual_amount || 0}
                           health={b.health || "green"}
+                          currency={selectedCurrency}
                         />
                       </div>
                     ))}
@@ -722,15 +731,16 @@ export default function App() {
                 <div className="glass-card p-6 space-y-4">
                   <div>
                     <h3 className="font-semibold text-white mb-1">Default Currency</h3>
-                    <p className="text-sm text-slate-500">All foreign transactions convert to USD</p>
+                    <p className="text-sm text-slate-500">Amounts across the app display in this currency</p>
                     <div className="mt-3 flex gap-2 flex-wrap">
-                      {["USD", "EUR", "GBP", "JPY", "INR"].map((c) => (
-                        <span
+                      {["USD", "EUR", "GBP", "JPY", "INR", "CAD", "AUD"].map((c) => (
+                        <button
                           key={c}
-                          className={`badge ${c === "USD" ? "bg-primary-500/20 text-primary-300" : "bg-surface-200/50 text-slate-400"}`}
+                          onClick={() => setSelectedCurrency(c)}
+                          className={`badge cursor-pointer transition-colors ${c === selectedCurrency ? "bg-primary-500/20 text-primary-300" : "bg-surface-200/50 text-slate-400 hover:text-slate-200"}`}
                         >
                           {c}
-                        </span>
+                        </button>
                       ))}
                     </div>
                   </div>
@@ -811,6 +821,7 @@ function GoalsPanel({
   onAdd,
   onProgressChange,
   onDelete,
+  currency = "USD",
 }: {
   goals: Goal[];
   title: string;
@@ -820,6 +831,7 @@ function GoalsPanel({
   onAdd: () => void;
   onProgressChange: (goalId: string, value: string) => void;
   onDelete: (goalId: string) => void;
+  currency?: string;
 }) {
   return (
     <div className="glass-card p-6">
@@ -869,7 +881,7 @@ function GoalsPanel({
                 </div>
                 <div className="flex items-center justify-between text-xs text-slate-500 mb-2">
                   <span>{progress.toFixed(0)}% complete</span>
-                  <span>${goal.current_amount.toFixed(0)} / ${goal.target_amount.toFixed(0)}</span>
+                  <span>{formatCurrency(goal.current_amount, currency)} / {formatCurrency(goal.target_amount, currency)}</span>
                 </div>
                 <div className="h-2 bg-surface-300/60 rounded-full overflow-hidden mb-3">
                   <div className="h-full bg-primary-500 rounded-full transition-all" style={{ width: `${progress}%` }} />
@@ -929,7 +941,7 @@ function StatCard({ icon, label, value, color, trend }: StatCardProps) {
 
 const chartColors = ["#34d399", "#60a5fa", "#fbbf24", "#f87171", "#a78bfa", "#fb7185", "#22d3ee"];
 
-function CategoryPieChart({ data }: { data: [string, number][] }) {
+function CategoryPieChart({ data, currency = "USD" }: { data: [string, number][]; currency?: string }) {
   const total = data.reduce((sum, [, amount]) => sum + amount, 0);
   let cursor = 0;
   const gradientStops = data.map(([, amount], index) => {
@@ -956,7 +968,7 @@ function CategoryPieChart({ data }: { data: [string, number][] }) {
           >
             <div className="absolute inset-7 rounded-full bg-surface-100 flex flex-col items-center justify-center">
               <span className="text-[10px] uppercase tracking-wider text-slate-500">Total</span>
-              <span className="text-lg font-bold text-white">${total.toFixed(0)}</span>
+              <span className="text-lg font-bold text-white">{formatCurrency(total, currency)}</span>
             </div>
           </div>
           <div className="w-full space-y-2.5">
@@ -979,9 +991,11 @@ function CategoryPieChart({ data }: { data: [string, number][] }) {
 function MonthlySpendingChart({
   data,
   maxAmount,
+  currency = "USD",
 }: {
   data: { label: string; amount: number }[];
   maxAmount: number;
+  currency?: string;
 }) {
   return (
     <div className="glass-card p-6">
@@ -995,19 +1009,19 @@ function MonthlySpendingChart({
           return (
             <div key={month.label} className="h-full flex-1 flex flex-col items-center justify-end gap-2 group">
               <span className="text-[10px] text-slate-400 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
-                ${month.amount.toFixed(0)}
+                {formatCurrency(month.amount, currency)}
               </span>
               <div
                 className="w-full max-w-10 rounded-t-lg bg-gradient-to-t from-primary-700 to-primary-400 transition-all duration-500 group-hover:from-primary-500 group-hover:to-primary-300"
                 style={{ height: `${height}%` }}
-                title={`${month.label}: ${month.amount.toFixed(2)}`}
+                title={`${month.label}: ${formatCurrency(month.amount, currency)}`}
               />
               <span className="text-[11px] text-slate-500">{month.label}</span>
             </div>
           );
         })}
       </div>
-      <p className="text-xs text-slate-500 mt-4">Converted to USD across the last six months</p>
+      <p className="text-xs text-slate-500 mt-4">Converted to {currency} across the last six months</p>
     </div>
   );
 }
@@ -1016,10 +1030,12 @@ function TransactionList({
   transactions,
   onDelete,
   showCurrency,
+  displayCurrency = "USD",
 }: {
   transactions: Transaction[];
   onDelete: (id: string) => void;
   showCurrency?: boolean;
+  displayCurrency?: string;
 }) {
   if (transactions.length === 0) {
     return (
@@ -1062,8 +1078,8 @@ function TransactionList({
                   <p className="font-semibold text-white text-sm">
                     {symbol}{tx.amount.toFixed(2)}
                   </p>
-                  {showCurrency && tx.currency !== "USD" && (
-                    <p className="text-xs text-slate-500">${usdAmount.toFixed(2)} USD</p>
+                  {showCurrency && tx.currency !== displayCurrency && (
+                    <p className="text-xs text-slate-500">{formatCurrency(usdAmount, displayCurrency)} {displayCurrency}</p>
                   )}
                 </div>
                 <button
