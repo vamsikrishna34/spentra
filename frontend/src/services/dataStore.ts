@@ -1,4 +1,4 @@
-import type { Transaction, Budget, Prediction, ChatMessage } from "../types";
+import type { Transaction, Budget, Prediction } from "../types";
 import {
   MOCK_TRANSACTIONS,
   MOCK_BUDGETS,

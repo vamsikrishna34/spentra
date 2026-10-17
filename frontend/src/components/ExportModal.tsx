@@ -37,7 +37,7 @@ function generateCSV(transactions: Transaction[], budgets: Budget[]): string {
   return csv;
 }
 
-function generateHTMLReport(transactions: Transaction[], budgets: Budget[], format: ExportFormat): string {
+function generateHTMLReport(transactions: Transaction[], budgets: Budget[]): string {
   const totalSpent = transactions.reduce((s, t) => s + (t.converted_amount || t.amount), 0);
   const totalBudget = budgets.reduce((s, b) => s + b.planned_amount, 0);
 
@@ -110,12 +110,12 @@ export default function ExportModal({ onClose, transactions, budgets }: ExportMo
       filename = "spentra_report.csv";
     } else if (format === "pdf") {
       // Export as printable HTML (user can print to PDF)
-      const html = generateHTMLReport(transactions, budgets, format);
+      const html = generateHTMLReport(transactions, budgets);
       blob = new Blob([html], { type: "text/html" });
       filename = "spentra_report.html";
     } else {
       // Export as HTML (Word can open it)
-      const html = generateHTMLReport(transactions, budgets, format);
+      const html = generateHTMLReport(transactions, budgets);
       blob = new Blob([html], { type: "application/msword" });
       filename = "spentra_report.doc";
     }

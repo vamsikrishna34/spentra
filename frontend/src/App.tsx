@@ -174,7 +174,7 @@ export default function App() {
     const val = parseFloat(budgetEditValue);
     if (isNaN(val) || val <= 0) return;
     try {
-      const updated = await dataStore.updateBudget(budgetId, val);
+      await dataStore.updateBudget(budgetId, val);
       setBudgets((prev) => prev.map((b) => (b.id === budgetId ? { ...b, planned_amount: val } : b)));
       setEditingBudget(null);
       showToast("Budget updated");
