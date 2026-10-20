@@ -30,7 +30,7 @@ export function convertToUSD(amount: number, fromCurrency: string): number {
 }
 
 export function getCurrencySymbol(code: string): string {
-  return CURRENCY_SYMBOLS[code] || "$";
+  return CURRENCY_SYMBOLS[code] || "₹";
 }
 
 export function convertFromUSD(amountUSD: number, toCurrency: string): number {
@@ -147,9 +147,9 @@ export function computePrediction(
 
   let recommendation: string;
   if (velocityWarning) {
-    recommendation = `You're on pace to spend $${projectedMonthEnd.toFixed(0)} this month — $${(projectedMonthEnd - totalBudget).toFixed(0)} over budget. Consider cutting back on discretionary spending.`;
+    recommendation = `You're on pace to spend ₹${projectedMonthEnd.toFixed(0)} this month — ₹${(projectedMonthEnd - totalBudget).toFixed(0)} over budget. Consider cutting back on discretionary spending.`;
   } else if (remaining > 0 && daysRemaining > 0) {
-    recommendation = `Great pace! You can safely spend $${safeDailySpend.toFixed(2)} per day for the remaining ${daysRemaining} days and stay within budget.`;
+    recommendation = `Great pace! You can safely spend ₹${safeDailySpend.toFixed(2)} per day for the remaining ${daysRemaining} days and stay within budget.`;
   } else {
     recommendation = "Keep tracking your expenses to get personalized insights.";
   }
@@ -212,12 +212,12 @@ export const MOCK_BUDGETS: Budget[] = [
 ];
 
 export const MOCK_COACH_RESPONSES: string[] = [
-  "You've spent $173 on food this month — that's 29% of your food budget. At this pace, you'll stay well within your $600 limit. Nice work!",
-  "Your transport spending is at $90, which is 45% of budget with 14 days left. Consider carpooling or public transit a few days to keep on track.",
+  "You've spent ₹173 on food this month — that's 29% of your food budget. At this pace, you'll stay well within your ₹600 limit. Nice work!",
+  "Your transport spending is at ₹90, which is 45% of budget with 14 days left. Consider carpooling or public transit a few days to keep on track.",
   "I notice your entertainment budget is at 92% capacity. Maybe skip one more movie night this month to stay in the green zone?",
   "You're doing great! Your total spending velocity is below your daily safe spend. Keep it up and you'll end the month with budget to spare.",
-  "Your biggest spend category this month is food. Meal prepping on weekends could save you an estimated $80-120 monthly.",
-  "Watch out — your bills category will likely hit the $800 cap with the upcoming utility payment. Plan ahead for next month's cycle.",
+  "Your biggest spend category this month is food. Meal prepping on weekends could save you an estimated ₹80-120 monthly.",
+  "Watch out — your bills category will likely hit the ₹800 cap with the upcoming utility payment. Plan ahead for next month's cycle.",
 ];
 
 function getDateOffset(daysAgo: number): string {

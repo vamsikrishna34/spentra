@@ -14,7 +14,7 @@
   }
 
   body {
-    font-family: "Inter", system-ui, sans-serif;
+    font-family: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
     @apply bg-surface-0 text-slate-200;
     -webkit-font-smoothing: antialiased;
     background-image:
@@ -43,13 +43,12 @@
 
 @layer components {
   .glass-card {
-    @apply bg-surface-100/70 backdrop-blur-xl border border-surface-200/60 rounded-2xl;
-    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.2);
+    @apply bg-surface-100/70 backdrop-blur-xl border border-slate-200/10 rounded-2xl;
+    box-shadow: 0 12px 35px rgba(15, 23, 42, 0.08);
   }
 
   .glass-card-hover {
-    @apply glass-card transition-all duration-300 hover:border-primary-500/40 hover:shadow-primary-500/10;
-    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.2);
+    @apply glass-card transition-all duration-300 hover:border-primary-500/25 hover:shadow-primary-500/10;
   }
 
   .glass-card-hover:hover {
@@ -103,8 +102,23 @@
   }
 
   .divider {
-    @apply border-t border-surface-200/60;
+    @apply border-t border-slate-200/10;
   }
+
+  .eyebrow { @apply text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500; }
+  .metric-value { @apply font-semibold tracking-[-0.02em] text-white; }
+  .information-ribbon { @apply glass-card grid grid-cols-2 lg:grid-cols-4 divide-x divide-slate-200/10 overflow-hidden; }
+  .information-ribbon__item { @apply min-w-0 p-4 sm:p-5; }
+  .dashboard-heading { @apply flex items-end justify-between gap-6 flex-wrap; }
+  .header-summary { @apply flex items-center gap-5 rounded-2xl border border-slate-200/10 bg-surface-100/50 px-5 py-3; }
+  .header-summary-divider { @apply h-9 w-px bg-slate-200/10; }
+  .dashboard-workspace { @apply grid grid-cols-1 xl:grid-cols-[minmax(0,1.3fr)_minmax(300px,0.7fr)] gap-5 items-stretch; }
+  .quick-action-card { @apply p-5; }
+  .budget-health-card { @apply rounded-xl border border-slate-200/10 bg-surface-200/20 p-4; }
+  .micro-badge { @apply inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-semibold; }
+  .progress-track { @apply h-1 w-full overflow-hidden rounded-full bg-slate-200/10; }
+  .progress-fill { @apply h-full rounded-full transition-all duration-700 ease-out; }
+
 }
 
 @keyframes pulse-ring {
@@ -159,10 +173,14 @@
 .light .border-surface-300 { border-color: #cbd5e1; }
 .light .glass-card,
 .light .glass-card-hover {
-  background-color: rgba(255, 255, 255, 0.82);
-  border-color: rgba(203, 213, 225, 0.8);
-  box-shadow: 0 4px 24px rgba(15, 23, 42, 0.07);
+  background-color: rgba(255, 255, 255, 0.88);
+  border-color: #f1f5f9;
+  box-shadow: 0 12px 35px rgba(15, 23, 42, 0.06);
 }
+.light .metric-value { color: #0f172a; }
+.light .header-summary { background-color: #fff; border-color: #f1f5f9; }
+.light .budget-health-card { background-color: #f8fafc; border-color: #f1f5f9; }
+.light .information-ribbon > * + * { border-color: #f1f5f9; }
 .light .btn-secondary {
   background-color: #ffffff;
   color: #334155;
@@ -178,3 +196,8 @@
   color: #1e293b;
 }
 .light .input-field::placeholder { color: #94a3b8; }
+
+@media (max-width: 640px) {
+  .information-ribbon { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .header-summary { width: 100%; justify-content: space-between; }
+}

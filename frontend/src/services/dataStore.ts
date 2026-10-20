@@ -148,25 +148,25 @@ export const dataStore = {
         .filter((t) => t.category === "food")
         .reduce((s, t) => s + (t.converted_amount || t.amount), 0);
       const pct = foodBudget ? ((foodSpent / foodBudget.planned_amount) * 100).toFixed(0) : "?";
-      return `You've spent $${foodSpent.toFixed(2)} on food this month — that's ${pct}% of your ${foodBudget ? "$" + foodBudget.planned_amount : "?"} budget. ${foodBudget && foodSpent < foodBudget.planned_amount * 0.8 ? "You're on track!" : "Consider meal prepping to save."}`;
+      return `You've spent ₹${foodSpent.toFixed(2)} on food this month — that's ${pct}% of your ${foodBudget ? "₹" + foodBudget.planned_amount : "?"} budget. ${foodBudget && foodSpent < foodBudget.planned_amount * 0.8 ? "You're on track!" : "Consider meal prepping to save."}`;
     }
 
     if (lower.includes("transport") || lower.includes("gas") || lower.includes("uber")) {
       const transportSpent = transactions
         .filter((t) => t.category === "transport")
         .reduce((s, t) => s + (t.converted_amount || t.amount), 0);
-      return `Transport spending: $${transportSpent.toFixed(2)} this month. Consider public transit or carpooling to reduce costs by up to 30%.`;
+      return `Transport spending: ₹${transportSpent.toFixed(2)} this month. Consider public transit or carpooling to reduce costs by up to 30%.`;
     }
 
     if (lower.includes("save") || lower.includes("saving") || lower.includes("cut")) {
-      return "Based on your spending patterns, you could save approximately $80-120/month by reducing dining out and entertainment expenses by 20%. That's nearly $1,200/year in potential savings!";
+      return "Based on your spending patterns, you could save approximately ₹80-120/month by reducing dining out and entertainment expenses by 20%. That's nearly ₹1,200/year in potential savings!";
     }
 
     if (lower.includes("budget") || lower.includes("over") || lower.includes("limit")) {
       const prediction = computePrediction(transactions, budgets);
       return prediction.velocity_warning
-        ? `Warning: You're projected to exceed your budget by $${(prediction.projected_month_end_total - budgets.reduce((s, b) => s + b.planned_amount, 0)).toFixed(0)} this month. Safe daily spend: $${prediction.safe_daily_spend.toFixed(2)}.`
-        : `You're within budget! Safe daily spend for the rest of the month: $${prediction.safe_daily_spend.toFixed(2)}.`;
+        ? `Warning: You're projected to exceed your budget by ₹${(prediction.projected_month_end_total - budgets.reduce((s, b) => s + b.planned_amount, 0)).toFixed(0)} this month. Safe daily spend: ₹${prediction.safe_daily_spend.toFixed(2)}.`
+        : `You're within budget! Safe daily spend for the rest of the month: ₹${prediction.safe_daily_spend.toFixed(2)}.`;
     }
 
     const idx = Math.floor(Math.random() * MOCK_COACH_RESPONSES.length);

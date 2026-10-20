@@ -9,9 +9,9 @@ interface QuickInputBarProps {
 }
 
 const EXAMPLES = [
-  "Spent $14.50 on lunch at Chipotle",
-  "Paid €42 for dinner in Paris",
-  "£15.50 for train ticket in London",
+  "Spent ₹1,200 on lunch at Chipotle",
+  "Paid ₹3,800 for dinner in Paris",
+  "₹1,600 for train ticket in London",
   "₹500 for groceries",
 ];
 
@@ -38,7 +38,7 @@ export default function QuickInputBar({ onSubmit, loading, placeholder, compact 
             onChange={(e) => setText(e.target.value)}
             onFocus={() => setShowExamples(true)}
             onBlur={() => setTimeout(() => setShowExamples(false), 200)}
-            placeholder={placeholder || "e.g. Spent $45 on groceries at Whole Foods"}
+            placeholder={placeholder || "e.g. Spent ₹3,700 on groceries at Whole Foods"}
             className="input-field pl-10"
             disabled={loading}
           />

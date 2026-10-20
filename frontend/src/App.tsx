@@ -62,7 +62,7 @@ export default function App() {
   const [toast, setToast] = useState<string | null>(null);
   const [editingBudget, setEditingBudget] = useState<string | null>(null);
   const [budgetEditValue, setBudgetEditValue] = useState("");
-  const [selectedCurrency, setSelectedCurrency] = useState(() => localStorage.getItem("spentra_currency") || "USD");
+  const [selectedCurrency, setSelectedCurrency] = useState("INR");
   const [goals, setGoals] = useState<Goal[]>(() => {
     try {
       return JSON.parse(localStorage.getItem("spentra_goals") || "[]") as Goal[];
@@ -149,7 +149,7 @@ export default function App() {
       const parsed = dataStore.parseNaturalLanguage(text);
       const newTx = await dataStore.addTransaction(parsed);
       setTransactions((prev) => [newTx, ...prev]);
-      showToast(`Logged: ${newTx.currency} ${newTx.amount.toFixed(2)} → ${newTx.category}`);
+      showToast(`Logged: ${formatCurrency(newTx.converted_amount || newTx.amount, selectedCurrency)} → ${newTx.category}`);
     } catch {
       showToast("Failed to log transaction");
     } finally {
@@ -352,7 +352,7 @@ export default function App() {
               className="bg-transparent text-inherit outline-none cursor-pointer"
               aria-label="Choose display currency"
             >
-              {['USD', 'EUR', 'GBP', 'JPY', 'INR', 'CAD', 'AUD'].map((currency) => (
+              {['INR'].map((currency) => (
                 <option key={currency} value={currency} className="bg-surface-100 text-slate-900">{currency}</option>
               ))}
             </select>
@@ -383,13 +383,21 @@ export default function App() {
             {/* Dashboard */}
             {activeView === "dashboard" && (
               <div className="space-y-6 animate-fade-in">
-                <div>
-                  <h1 className="text-2xl font-bold text-white">Dashboard</h1>
-                  <p className="text-slate-500 text-sm mt-1">Your financial overview at a glance</p>
+                <div className="dashboard-heading">
+                  <div>
+                    <p className="eyebrow text-primary-400 mb-2">Personal finance / overview</p>
+                    <h1 className="text-3xl font-bold tracking-tight text-white">Dashboard</h1>
+                    <p className="text-slate-500 text-sm mt-1">A focused view of your monthly money movement.</p>
+                  </div>
+                  <div className="header-summary">
+                    <div><p className="eyebrow">Monthly income</p><p className="metric-value text-lg">{salary > 0 ? formatCurrency(salary, selectedCurrency) : "Not set"}</p></div>
+                    <div className="header-summary-divider" />
+                    <div><p className="eyebrow">Total savings</p><p className={`metric-value text-lg ${savings >= 0 ? "text-primary-400" : "text-danger-400"}`}>{formatCurrency(savings, selectedCurrency)}</p></div>
+                  </div>
                 </div>
 
                 {/* Stat Cards */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div className="information-ribbon">
                   <StatCard
                     icon={<Wallet className="w-5 h-5" />}
                     label="Total Spent"
@@ -421,7 +429,7 @@ export default function App() {
                 </div>
 
                 {/* Salary Summary */}
-                <div className="glass-card p-5 sm:p-6">
+                <div className="glass-card dashboard-salary hidden p-5 sm:p-6">
                   <div className="flex items-center justify-between gap-4 flex-wrap">
                     <div className="flex items-center gap-3">
                       <div className="w-11 h-11 rounded-xl bg-primary-500/15 text-primary-400 flex items-center justify-center">
@@ -504,15 +512,21 @@ export default function App() {
                   )}
                 </div>
 
-                {/* Predictive Banner */}
-                <PredictiveBanner
-                  safeDailySpend={livePrediction.safe_daily_spend}
-                  velocityWarning={livePrediction.velocity_warning}
-                  recommendation={livePrediction.recommendation}
-                  daysUntilExhausted={livePrediction.days_until_budget_exhausted}
-                  projectedTotal={livePrediction.projected_month_end_total}
-                  currency={selectedCurrency}
-                />
+                <div className="dashboard-workspace">
+                  <PredictiveBanner
+                    safeDailySpend={livePrediction.safe_daily_spend}
+                    velocityWarning={livePrediction.velocity_warning}
+                    recommendation={livePrediction.recommendation}
+                    daysUntilExhausted={livePrediction.days_until_budget_exhausted}
+                    projectedTotal={livePrediction.projected_month_end_total}
+                    currency={selectedCurrency}
+                  />
+                  <div className="glass-card quick-action-card">
+                    <div className="flex items-center justify-between mb-4"><div><p className="eyebrow text-primary-400">Quick action</p><h2 className="text-lg font-semibold text-white mt-1">Log a transaction</h2></div><Mic className="w-5 h-5 text-primary-400" /></div>
+                    <QuickInputBar onSubmit={handleLogText} loading={logLoading} placeholder="e.g. ₹1,200 on groceries" />
+                    <div className="flex gap-2 mt-4"><button onClick={() => setShowManual(true)} className="btn-secondary flex-1 text-xs">Manual entry</button><button onClick={() => setShowOcr(true)} className="btn-secondary flex-1 text-xs">Scan receipt</button></div>
+                  </div>
+                </div>
 
                 {/* Budget Health Bars */}
                 <div>
@@ -630,7 +644,7 @@ export default function App() {
                   <QuickInputBar
                     onSubmit={handleLogText}
                     loading={logLoading}
-                    placeholder="e.g. Spent $45 on groceries at Whole Foods"
+                    placeholder="e.g. Spent ₹1,200 on groceries at Whole Foods"
                   />
                 </div>
 
@@ -860,7 +874,7 @@ export default function App() {
                     <h3 className="font-semibold text-white mb-1">Default Currency</h3>
                     <p className="text-sm text-slate-500">Amounts across the app display in this currency</p>
                     <div className="mt-3 flex gap-2 flex-wrap">
-                      {["USD", "EUR", "GBP", "JPY", "INR", "CAD", "AUD"].map((c) => (
+                      {["INR"].map((c) => (
                         <button
                           key={c}
                           onClick={() => setSelectedCurrency(c)}
@@ -1090,7 +1104,7 @@ function StatCard({ icon, label, value, color, trend }: StatCardProps) {
   };
 
   return (
-    <div className="glass-card-hover p-5">
+    <div className="information-ribbon__item">
       <div className="flex items-center gap-3">
         <div className={`w-11 h-11 rounded-xl flex items-center justify-center ${colors[color]}`}>
           {icon}
@@ -1195,8 +1209,7 @@ function MonthlySpendingChart({
 function TransactionList({
   transactions,
   onDelete,
-  showCurrency,
-  displayCurrency = "USD",
+  displayCurrency = "INR",
 }: {
   transactions: Transaction[];
   onDelete: (id: string) => void;
@@ -1215,8 +1228,7 @@ function TransactionList({
     <div className="glass-card p-0 overflow-hidden">
       <div className="divide-y divide-surface-200/40">
         {transactions.map((tx) => {
-          const symbol = getCurrencySymbol(tx.currency);
-          const usdAmount = tx.converted_amount || tx.amount;
+          const displayAmount = tx.converted_amount || tx.amount;
           return (
             <div
               key={tx.id}
@@ -1242,11 +1254,8 @@ function TransactionList({
               <div className="flex items-center gap-3 flex-shrink-0">
                 <div className="text-right">
                   <p className="font-semibold text-white text-sm">
-                    {symbol}{tx.amount.toFixed(2)}
+                    {formatCurrency(displayAmount, displayCurrency)}
                   </p>
-                  {showCurrency && tx.currency !== displayCurrency && (
-                    <p className="text-xs text-slate-500">{formatCurrency(usdAmount, displayCurrency)} {displayCurrency}</p>
-                  )}
                 </div>
                 <button
                   onClick={() => onDelete(tx.id)}
