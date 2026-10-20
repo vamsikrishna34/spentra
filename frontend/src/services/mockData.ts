@@ -60,6 +60,8 @@ export const CATEGORIES = [
   "other",
 ] as const;
 
+export const CURRENCY_CODES = MOCK_RATES.map((r) => r.code);
+
 // Parse natural language text into a transaction (mock parser)
 export function parseTextTransaction(text: string): Omit<Transaction, "id" | "user_id"> {
   const lower = text.toLowerCase();

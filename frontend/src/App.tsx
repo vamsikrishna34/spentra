@@ -45,6 +45,7 @@ import {
   convertFromUSD,
   convertToUSD,
   CATEGORIES,
+  CURRENCY_CODES,
 } from "./services/mockData";
 import type { AppView, Transaction, Budget, Goal } from "./types";
 
@@ -62,7 +63,9 @@ export default function App() {
   const [toast, setToast] = useState<string | null>(null);
   const [editingBudget, setEditingBudget] = useState<string | null>(null);
   const [budgetEditValue, setBudgetEditValue] = useState("");
-  const [selectedCurrency, setSelectedCurrency] = useState("INR");
+  const [selectedCurrency, setSelectedCurrency] = useState(() => localStorage.getItem("spentra_currency") || "INR");
+  const [convertCurrency, setConvertCurrency] = useState(() => localStorage.getItem("spentra_convert_currency") || "USD");
+  const [convertAmount, setConvertAmount] = useState(() => Number(localStorage.getItem("spentra_convert_amount")) || 1000);
   const [goals, setGoals] = useState<Goal[]>(() => {
     try {
       return JSON.parse(localStorage.getItem("spentra_goals") || "[]") as Goal[];
@@ -129,6 +132,14 @@ export default function App() {
   useEffect(() => {
     localStorage.setItem("spentra_currency", selectedCurrency);
   }, [selectedCurrency]);
+
+  useEffect(() => {
+    localStorage.setItem("spentra_convert_currency", convertCurrency);
+  }, [convertCurrency]);
+
+  useEffect(() => {
+    localStorage.setItem("spentra_convert_amount", String(convertAmount));
+  }, [convertAmount]);
 
   useEffect(() => {
     localStorage.setItem("spentra_goals", JSON.stringify(goals));
@@ -345,17 +356,39 @@ export default function App() {
 
         <div className="flex justify-end items-center gap-2 mb-4 flex-wrap">
           <label className="btn-secondary flex items-center gap-2 text-sm cursor-pointer">
-            <span className="text-slate-500">Currency</span>
+            <span className="text-slate-500">Display</span>
             <select
               value={selectedCurrency}
               onChange={(event) => setSelectedCurrency(event.target.value)}
               className="bg-transparent text-inherit outline-none cursor-pointer"
               aria-label="Choose display currency"
             >
-              {['INR'].map((currency) => (
+              {CURRENCY_CODES.map((currency) => (
                 <option key={currency} value={currency} className="bg-surface-100 text-slate-900">{currency}</option>
               ))}
             </select>
+          </label>
+          <label className="btn-secondary flex items-center gap-2 text-sm cursor-pointer">
+            <span className="text-slate-500">Convert</span>
+            <input
+              type="number"
+              min="0"
+              value={convertAmount}
+              onChange={(event) => setConvertAmount(Number(event.target.value) || 0)}
+              className="bg-transparent text-inherit outline-none w-20"
+              aria-label="Amount to convert"
+            />
+            <select
+              value={convertCurrency}
+              onChange={(event) => setConvertCurrency(event.target.value)}
+              className="bg-transparent text-inherit outline-none cursor-pointer"
+              aria-label="Choose currency to convert into"
+            >
+              {CURRENCY_CODES.map((currency) => (
+                <option key={currency} value={currency} className="bg-surface-100 text-slate-900">{currency}</option>
+              ))}
+            </select>
+            <span className="text-primary-400 font-semibold tabular-nums">{formatCurrency(convertToUSD(convertAmount, selectedCurrency), convertCurrency)}</span>
           </label>
           <button
             onClick={() => setTheme((current) => current === "dark" ? "light" : "dark")}
@@ -874,7 +907,7 @@ export default function App() {
                     <h3 className="font-semibold text-white mb-1">Default Currency</h3>
                     <p className="text-sm text-slate-500">Amounts across the app display in this currency</p>
                     <div className="mt-3 flex gap-2 flex-wrap">
-                      {["INR"].map((c) => (
+                      {CURRENCY_CODES.map((c) => (
                         <button
                           key={c}
                           onClick={() => setSelectedCurrency(c)}
