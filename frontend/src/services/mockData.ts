@@ -16,6 +16,7 @@ export const MOCK_RATES: CurrencyRate[] = [
   { code: "INR", rate: 83.2, symbol: "₹" },
   { code: "CAD", rate: 1.36, symbol: "C$" },
   { code: "AUD", rate: 1.52, symbol: "A$" },
+  { code: "THB", rate: 36.5, symbol: "฿" },
 ];
 
 export const CURRENCY_SYMBOLS: Record<string, string> = Object.fromEntries(
