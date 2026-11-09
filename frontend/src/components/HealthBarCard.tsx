@@ -1,5 +1,5 @@
 import { CheckCircle2, AlertTriangle, XCircle } from "lucide-react";
-import { convertFromUSD, getCurrencySymbol } from "../services/mockData";
+import { formatCurrency } from "../services/mockData";
 import type { HealthStatus } from "../types";
 
 interface HealthBarCardProps {
@@ -27,13 +27,9 @@ export default function HealthBarCard({ category, planned, actual, health, curre
   const Icon = config.icon;
   const percentage = planned > 0 ? Math.min((actual / planned) * 100, 100) : 0;
   const remaining = planned - actual;
-  const symbol = getCurrencySymbol(currency);
-  const actualDisplay = convertFromUSD(actual, currency);
-  const plannedDisplay = convertFromUSD(planned, currency);
-  const remainingDisplay = convertFromUSD(Math.abs(remaining), currency);
   const utilityLabel = remaining < 0
-    ? `${symbol}${remainingDisplay.toFixed(0)} over`
-    : `${symbol}${remainingDisplay.toFixed(0)} left`;
+    ? `${formatCurrency(Math.abs(remaining), currency)} over`
+    : `${formatCurrency(remaining, currency)} left`;
 
   return (
     <div className="budget-health-card">
@@ -44,9 +40,9 @@ export default function HealthBarCard({ category, planned, actual, health, curre
           {utilityLabel}
         </div>
       </div>
-      <div className="flex items-baseline gap-2 mt-5">
-        <span className="metric-value text-2xl">{symbol}{actualDisplay.toFixed(0)}</span>
-        <span className="text-xs text-slate-500">of {symbol}{plannedDisplay.toFixed(0)}</span>
+      <div className="flex items-baseline gap-2 mt-5 min-w-0">
+        <span className="metric-value text-2xl truncate">{formatCurrency(actual, currency)}</span>
+        <span className="text-xs text-slate-500 whitespace-nowrap">of {formatCurrency(planned, currency)}</span>
       </div>
       <div className="progress-track mt-3">
         <div className={`progress-fill ${config.barColor}`} style={{ width: `${percentage}%` }} />

@@ -13,6 +13,7 @@ import { dataStore } from "../services/dataStore";
 interface AiSidebarChatProps {
   transactions: Transaction[];
   budgets: Budget[];
+  currency: string;
 }
 
 interface Message {
@@ -29,7 +30,7 @@ const QUICK_PROMPTS = [
   "Transport spending?",
 ];
 
-export default function AiSidebarChat({ transactions, budgets }: AiSidebarChatProps) {
+export default function AiSidebarChat({ transactions, budgets, currency }: AiSidebarChatProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([
     {
@@ -64,7 +65,7 @@ export default function AiSidebarChat({ transactions, budgets }: AiSidebarChatPr
     setLoading(true);
 
     try {
-      const response = await dataStore.getCoachResponse(msgText, transactions, budgets);
+      const response = await dataStore.getCoachResponse(msgText, transactions, budgets, currency);
       setMessages((prev) => [
         ...prev,
         {

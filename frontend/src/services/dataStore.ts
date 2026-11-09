@@ -1,4 +1,4 @@
-import type { Transaction, Budget, Prediction } from "../types";
+import type { Transaction, Budget } from "../types";
 import {
   MOCK_TRANSACTIONS,
   MOCK_BUDGETS,
@@ -8,7 +8,9 @@ import {
   parseTextTransaction,
   generateId,
   convertToUSD,
+  formatCurrency,
 } from "./mockData";
+import { supabase } from "./supabaseClient";
 
 const STORAGE_KEY = "spentra_data_v1";
 
@@ -61,10 +63,26 @@ export const dataStore = {
     return enrichBudgets(data.budgets, data.transactions);
   },
 
-  async getPrediction(): Promise<Prediction> {
-    await delay(300);
-    const data = getInitialData();
-    return computePrediction(data.transactions, data.budgets);
+  async getSalary(): Promise<number> {
+    if (!supabase) throw new Error("Database connection is not configured");
+    const { data, error } = await supabase
+      .from("salary_settings")
+      .select("monthly_amount_usd")
+      .eq("id", "default")
+      .maybeSingle();
+    if (error) throw error;
+    return data ? Number(data.monthly_amount_usd) : 0;
+  },
+
+  async saveSalary(monthlyAmountUSD: number): Promise<void> {
+    if (!supabase) throw new Error("Database connection is not configured");
+    const { error } = await supabase
+      .from("salary_settings")
+      .upsert(
+        { id: "default", monthly_amount_usd: Number(monthlyAmountUSD.toFixed(4)), updated_at: new Date().toISOString() },
+        { onConflict: "id" }
+      );
+    if (error) throw error;
   },
 
   async addTransaction(
@@ -138,35 +156,36 @@ export const dataStore = {
     saveToStorage(data);
   },
 
-  async getCoachResponse(question: string, transactions: Transaction[], budgets: Budget[]): Promise<string> {
+  async getCoachResponse(question: string, transactions: Transaction[], budgets: Budget[], currency: string): Promise<string> {
     await delay(800);
     const lower = question.toLowerCase();
+    const spentIn = (category: string) => transactions
+      .filter((t) => t.category === category)
+      .reduce((s, t) => s + (t.converted_amount || t.amount), 0);
 
     if (lower.includes("food") || lower.includes("eat") || lower.includes("dining")) {
       const foodBudget = budgets.find((b) => b.category === "food");
-      const foodSpent = transactions
-        .filter((t) => t.category === "food")
-        .reduce((s, t) => s + (t.converted_amount || t.amount), 0);
-      const pct = foodBudget ? ((foodSpent / foodBudget.planned_amount) * 100).toFixed(0) : "?";
-      return `You've spent ₹${foodSpent.toFixed(2)} on food this month — that's ${pct}% of your ${foodBudget ? "₹" + foodBudget.planned_amount : "?"} budget. ${foodBudget && foodSpent < foodBudget.planned_amount * 0.8 ? "You're on track!" : "Consider meal prepping to save."}`;
+      const foodSpent = spentIn("food");
+      if (!foodBudget) return `You've spent ${formatCurrency(foodSpent, currency)} on food this month. You don't have a food budget set yet.`;
+      const pct = ((foodSpent / foodBudget.planned_amount) * 100).toFixed(0);
+      return `You've spent ${formatCurrency(foodSpent, currency)} on food this month — that's ${pct}% of your ${formatCurrency(foodBudget.planned_amount, currency)} budget. ${foodSpent < foodBudget.planned_amount * 0.8 ? "You're on track!" : "Consider meal prepping to save."}`;
     }
 
     if (lower.includes("transport") || lower.includes("gas") || lower.includes("uber")) {
-      const transportSpent = transactions
-        .filter((t) => t.category === "transport")
-        .reduce((s, t) => s + (t.converted_amount || t.amount), 0);
-      return `Transport spending: ₹${transportSpent.toFixed(2)} this month. Consider public transit or carpooling to reduce costs by up to 30%.`;
+      return `Transport spending: ${formatCurrency(spentIn("transport"), currency)} this month. Consider public transit or carpooling to reduce costs by up to 30%.`;
     }
 
     if (lower.includes("save") || lower.includes("saving") || lower.includes("cut")) {
-      return "Based on your spending patterns, you could save approximately ₹80-120/month by reducing dining out and entertainment expenses by 20%. That's nearly ₹1,200/year in potential savings!";
+      const discretionary = spentIn("entertainment") + spentIn("food");
+      return `Your dining and entertainment spending is ${formatCurrency(discretionary, currency)} this month. Trimming that by 20% would free up ${formatCurrency(discretionary * 0.2, currency)}.`;
     }
 
     if (lower.includes("budget") || lower.includes("over") || lower.includes("limit")) {
-      const prediction = computePrediction(transactions, budgets);
+      const prediction = computePrediction(transactions, budgets, currency);
+      const totalBudget = budgets.reduce((s, b) => s + b.planned_amount, 0);
       return prediction.velocity_warning
-        ? `Warning: You're projected to exceed your budget by ₹${(prediction.projected_month_end_total - budgets.reduce((s, b) => s + b.planned_amount, 0)).toFixed(0)} this month. Safe daily spend: ₹${prediction.safe_daily_spend.toFixed(2)}.`
-        : `You're within budget! Safe daily spend for the rest of the month: ₹${prediction.safe_daily_spend.toFixed(2)}.`;
+        ? `Warning: You're projected to exceed your budget by ${formatCurrency(prediction.projected_month_end_total - totalBudget, currency)} this month. Safe daily spend: ${formatCurrency(prediction.safe_daily_spend, currency)}.`
+        : `You're within budget! Safe daily spend for the rest of the month: ${formatCurrency(prediction.safe_daily_spend, currency)}.`;
     }
 
     const idx = Math.floor(Math.random() * MOCK_COACH_RESPONSES.length);

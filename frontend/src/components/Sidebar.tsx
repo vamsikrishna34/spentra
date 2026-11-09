@@ -1,5 +1,5 @@
 import { LayoutDashboard, Wallet, Mic, BarChart3, Download, Settings, TrendingDown, X } from "lucide-react";
-import { convertFromUSD, getCurrencySymbol } from "../services/mockData";
+import { formatCurrency } from "../services/mockData";
 import type { AppView } from "../types";
 
 interface SidebarProps {
@@ -51,7 +51,7 @@ export default function Sidebar({ activeView, onNavigate, mobileOpen, onCloseMob
         <div className="p-5">
           <div className="sidebar-budget-card">
             <div className="flex items-center justify-between mb-2"><p className="eyebrow">Monthly budget</p><span className="text-xs text-slate-400">{Math.round(budgetPct)}%</span></div>
-            <p className="metric-value text-xl">{getCurrencySymbol(currency)}{convertFromUSD(totalSpent, currency).toFixed(0)} <span className="text-xs text-slate-500 font-normal">/ {getCurrencySymbol(currency)}{convertFromUSD(totalBudget, currency).toFixed(0)}</span></p>
+            <p className="metric-value text-xl">{formatCurrency(totalSpent, currency)} <span className="text-xs text-slate-500 font-normal">/ {formatCurrency(totalBudget, currency)}</span></p>
             <div className="progress-track mt-3"><div className={`progress-fill ${budgetPct >= 100 ? "bg-danger-500" : budgetPct >= 80 ? "bg-warning-500" : "bg-primary-500"}`} style={{ width: `${Math.min(budgetPct, 100)}%` }} /></div>
           </div>
         </div>

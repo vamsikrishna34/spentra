@@ -44,9 +44,12 @@ export function convertFromUSD(amountUSD: number, toCurrency: string): number {
 export function formatCurrency(amountUSD: number, currency: string): string {
   const symbol = getCurrencySymbol(currency);
   const value = convertFromUSD(amountUSD, currency);
-  const isJpy = currency === "JPY";
-  const formatted = isJpy ? Math.round(value).toLocaleString() : value.toFixed(2);
-  return `${symbol}${formatted}`;
+  const decimals = currency === "JPY" ? 0 : 2;
+  const formatted = Math.abs(value).toLocaleString("en-US", {
+    minimumFractionDigits: decimals,
+    maximumFractionDigits: decimals,
+  });
+  return `${value < 0 ? "-" : ""}${symbol}${formatted}`;
 }
 
 export const CATEGORIES = [
@@ -119,7 +122,8 @@ export function computeHealth(planned: number, actual: number): HealthStatus {
 
 export function computePrediction(
   transactions: Transaction[],
-  budgets: Budget[]
+  budgets: Budget[],
+  currency: string
 ): Prediction {
   const now = new Date();
   const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
@@ -150,9 +154,9 @@ export function computePrediction(
 
   let recommendation: string;
   if (velocityWarning) {
-    recommendation = `You're on pace to spend ₹${projectedMonthEnd.toFixed(0)} this month — ₹${(projectedMonthEnd - totalBudget).toFixed(0)} over budget. Consider cutting back on discretionary spending.`;
+    recommendation = `You're on pace to spend ${formatCurrency(projectedMonthEnd, currency)} this month — ${formatCurrency(projectedMonthEnd - totalBudget, currency)} over budget. Consider cutting back on discretionary spending.`;
   } else if (remaining > 0 && daysRemaining > 0) {
-    recommendation = `Great pace! You can safely spend ₹${safeDailySpend.toFixed(2)} per day for the remaining ${daysRemaining} days and stay within budget.`;
+    recommendation = `Great pace! You can safely spend ${formatCurrency(safeDailySpend, currency)} per day for the remaining ${daysRemaining} days and stay within budget.`;
   } else {
     recommendation = "Keep tracking your expenses to get personalized insights.";
   }
@@ -215,12 +219,12 @@ export const MOCK_BUDGETS: Budget[] = [
 ];
 
 export const MOCK_COACH_RESPONSES: string[] = [
-  "You've spent ₹173 on food this month — that's 29% of your food budget. At this pace, you'll stay well within your ₹600 limit. Nice work!",
-  "Your transport spending is at ₹90, which is 45% of budget with 14 days left. Consider carpooling or public transit a few days to keep on track.",
-  "I notice your entertainment budget is at 92% capacity. Maybe skip one more movie night this month to stay in the green zone?",
-  "You're doing great! Your total spending velocity is below your daily safe spend. Keep it up and you'll end the month with budget to spare.",
-  "Your biggest spend category this month is food. Meal prepping on weekends could save you an estimated ₹80-120 monthly.",
-  "Watch out — your bills category will likely hit the ₹800 cap with the upcoming utility payment. Plan ahead for next month's cycle.",
+  "Keep an eye on your food spending this month. Small changes like meal prepping on weekends can add up quickly.",
+  "Transport costs are easy to trim. Carpooling or public transit a few days a week can make a noticeable difference.",
+  "Your entertainment budget is getting close to its limit. Consider skipping one outing this month to stay on track.",
+  "You're doing well. Stick to your safe daily spend and you should finish the month within budget.",
+  "Your biggest spending category tends to be food. Planning meals ahead is one of the easiest ways to save.",
+  "Bills are usually the largest fixed cost. Plan ahead for upcoming payments so they don't catch you off guard.",
 ];
 
 function getDateOffset(daysAgo: number): string {
